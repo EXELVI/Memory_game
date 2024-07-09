@@ -21,8 +21,15 @@
         <button id="start" class="btn btn-primary">Start</button>
         <div id="settings" class="row">
             <div class="col-12">
-                <label for="size">Size</label>
-                <input type="number" id="size" value="4" min="2" max="10"> x <span id="sizeValue">4</span>
+                <div>
+                    <label for="size">Size</label>
+                    <input type="number" id="size" value="4" min="2" max="10"> x <span id="sizeValue">4</span>
+                </div>
+                <div>
+                    <label for="theme">Theme</label>
+                    <select id="theme"></select>
+                </div>
+
             </div>
         </div>
         <div id="board" class="container text-center">
@@ -31,14 +38,34 @@
 
     </div>
     <script>
-        let cards = ["🍎", "🍌", "🍒", "🍓", "🍑", "🍍", "🍊", "🍋", "🍉"];
+        let cards = {
+            "fruits": ["🍎", "🍌", "🍒", "🍓", "🍑", "🍍", "🍊", "🍋", "🍉"],
+            "animals": ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨"],
+            "flags": ["🇦🇺", "🇧🇷", "🇨🇦", "🇨🇳", "🇩🇪", "🇪🇸", "🇫🇷", "🇬🇧", "🇮🇹"],
+            "sports": ["⚽", "🏀", "🏈", "⚾", "🎾", "🏐", "🏉", "🎱", "🏓"],
+            "weather": ["☀️", "🌤", "⛅", "🌦", "🌧", "⛈", "🌩", "🌨", "🌪"],
+            "food": ["🍔", "🍕", "🌭", "🥪", "🌮", "🌯", "🥙", "🍜", "🍣"],
+            "transport": ["🚗", "🚕", "🚙", "🚌", "🚎", "🏎", "🚓", "🚑", "🚒"],
+            "emoticons": ["😀", "😂", "😍", "😎", "😜", "😡", "😢", "😱", "😈"],
+            "hearts": ["❤️", "💛", "💚", "💙", "💜", "🖤", "💔", "❣️", "💕"],
+            "stars": ["⭐", "🌟", "💫", "✨", "⚡", "🔥", "💥", "☄️", "🌠"],
+            "moon": ["🌙", "🌕", "🌖", "🌗", "🌘", "🌑", "🌒", "🌓", "🌔"],
+            "clock": ["🕛", "🕧", "🕐", "🕜", "🕑", "🕝", "🕒", "🕞", "🕓"],
+            "zodiac": ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐"],
+            "music": ["🎵", "🎶", "🎼", "🎧", "🎤", "🎸", "🎹", "🥁", "🎷"],
+            "tools": ["🔨", "⛏", "🛠", "🔧", "🔩", "🔫", "🛡", "🔪", "🗡"],
+            "flowers": ["🌸", "💐", "🌷", "🌹", "🌺", "🌻", "🌼", "🌾", "🍁"],
+            "trees": ["🌲", "🌳", "🌴", "🌵", "🌿", "☘️", "🍀", "🎍", "🎋"],
+        }
+        let theme = "fruits";
+
         function getRandomBoard(sizex, sizey) {
             let totalCards = sizex * sizey;
             if (totalCards % 2 !== 0) {
                 alert("Size must be even");
                 return;
             }
-            let cardPool = cards.slice(0, totalCards / 2);
+            let cardPool = cards[theme].slice(0, totalCards / 2);
             let boardCards = cardPool.concat(cardPool);
             for (let i = boardCards.length - 1; i > 0; i--) {
                 let j = Math.floor(Math.random() * (i + 1));
@@ -56,27 +83,44 @@
 
 
         document.addEventListener("DOMContentLoaded", () => {
+
+            let themeSelect = document.getElementById("theme");
+
+            for (let key in cards) {
+                let option = document.createElement("option");
+                option.value = key;
+                option.innerText = key;
+                themeSelect.appendChild(option);
+            }
+
+            themeSelect.addEventListener("change", () => {
+                theme = themeSelect.value;
+            });
+
             let board = document.getElementById("board");
             let start = document.getElementById("start");
             let size = document.getElementById("size");
             let settings = document.getElementById("settings");
 
+            let moves = 0;
+            let timeStart = null;
+
             size.addEventListener("input", () => {
                 document.getElementById("sizeValue").innerText = size.value;
             });
 
-            function generateButtons(board) {
+            function generateButtons(board, hide) {
                 let boardDiv = document.getElementById('board');
-                boardDiv.innerHTML = ''; // Pulisce il contenuto esistente
+                boardDiv.innerHTML = '';
 
                 board.forEach(row => {
                     let rowDiv = document.createElement('div');
                     rowDiv.className = 'row row-cols-auto justify-content-center';
-                
+
                     row.forEach(card => {
-               let cardDiv = document.createElement('div');
+                        let cardDiv = document.createElement('div');
                         cardDiv.className = 'col';
-                        cardDiv.innerHTML = `<button class="btn btn-outline-secondary">${card}</button>`;
+                        cardDiv.innerHTML = `<button class="btn btn-outline-secondary" ${hide ? "" : "disabled"} >${hide ? "🃏" : card}</button>`;
                         rowDiv.appendChild(cardDiv);
                     });
                     boardDiv.appendChild(rowDiv);
@@ -90,12 +134,72 @@
             start.addEventListener("click", () => {
                 settings.style.display = "none";
                 boardMatrix = [];
-
-                //generate board
+                moves = 0;
+               
                 let sizex = size.value;
                 let sizey = size.value;
                 boardMatrix = getRandomBoard(sizex, sizey);
-                generateButtons(boardMatrix);
+                generateButtons(boardMatrix, false);
+
+                setTimeout(() => {
+                    generateButtons(boardMatrix, true);
+
+                    let buttons = board.querySelectorAll('button');
+                    let firstButton = null;
+                    let secondButton = null;
+                    
+                    timeStart = new Date();
+
+
+                    buttons.forEach((button, index) => {
+                        button.addEventListener("click", () => {
+                            if (button === firstButton) {
+                                return;
+
+                            }
+
+                            if (firstButton === null) {
+                                firstButton = button;
+                                firstButton.innerText = boardMatrix[Math.floor(index / sizey)][index % sizey];
+
+                            } else if (secondButton === null) {
+                                secondButton = button;
+                                secondButton.innerText = boardMatrix[Math.floor(index / sizey)][index % sizey];
+                                moves++;
+                                if (firstButton.innerText === secondButton.innerText) {
+                                    firstButton.disabled = true;
+                                    secondButton.disabled = true;
+                                    firstButton = null;
+                                    secondButton = null;
+
+                                    let win = true;
+                                    buttons.forEach(button => {
+                                        if (!button.disabled) {
+                                            win = false;
+                                        }
+                                    });
+                                    if (win) {
+                                        let timeEnd = new Date();
+                                        let timeDiff = timeEnd - timeStart;
+                                        alert(`You win in ${moves} moves and ${timeDiff / 1000} seconds`);
+                                        settings.style.display = "block";
+                                    }
+                                } else {
+                                    setTimeout(() => {
+                                        firstButton.innerText = "🃏";
+                                        secondButton.innerText = "🃏";
+                                        firstButton = null;
+                                        secondButton = null;
+                                    }, 1000);
+                                }
+                            }
+                        });
+                    });
+
+
+
+                }, 2000);
+
 
 
             });
